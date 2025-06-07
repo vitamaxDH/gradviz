@@ -4,40 +4,24 @@ GradViz is a Gradle plugin that generates an interactive HTML report to visualiz
 
 ---
 
-## 🚀 Installation via JitPack
+## 🚀 Installation
 
-To use GradViz, you must use the `buildscript` block in your root `build.gradle.kts` (or `build.gradle`) file as JitPack does not support the modern `plugins {}` block resolution.
-
-**1. Add JitPack repository and classpath dependency**
+Add the plugin to your `build.gradle.kts` (or `build.gradle`).
 
 **Kotlin DSL (`build.gradle.kts`)**
 ```kotlin
-buildscript {
-    repositories {
-        maven { url = uri("https://jitpack.io") }
-    }
-    dependencies {
-        classpath("com.github.vitamaxDH:gradviz:0.2.1")
-    }
+plugins {
+    id("com.github.vitamaxDH.gradviz") version "0.3.0"
 }
-
-apply(plugin = "com.github.vitamaxDH.gradviz")
 ```
 
 **Groovy DSL (`build.gradle`)**
 ```groovy
-buildscript {
-    repositories {
-        maven { url 'https://jitpack.io' }
-    }
-    dependencies {
-        classpath 'com.github.vitamaxDH:gradviz:0.2.1'
-    }
+plugins {
+    id 'com.github.vitamaxDH.gradviz' version '0.3.0'
 }
-
-apply plugin: 'com.github.vitamaxDH.gradviz'
 ```
-*Note: The `apply plugin` statement should be placed after the `buildscript` block in your file.*
+*After the plugin is successfully published to the Gradle Plugin Portal, users will not need to add any custom repositories.*
 
 ---
 
