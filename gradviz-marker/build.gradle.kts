@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.vitamaxDH"
-version = "0.4.0"
+version = "0.4.1"
 
 publishing {
     publications {
