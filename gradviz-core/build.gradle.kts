@@ -1,10 +1,26 @@
 plugins {
-    `java-library`
+    `java-gradle-plugin`
+    base
+}
+
+group = "com.github.vitamaxDH"
+version = "0.4.0"
+
+repositories {
+    mavenCentral()
 }
 
 dependencies {
-    // Gradle API is needed for the task classes
-    compileOnly(gradleApi())
-    // Gson for JSON
     implementation("com.google.code.gson:gson:2.10.1")
-} 
+}
+
+gradlePlugin {
+    plugins {
+        create("gradviz") {
+            id = "com.github.vitamaxDH.gradviz"
+            implementationClass = "io.vitamax.gradviz.GradvizPlugin"
+            displayName = "Gradviz"
+            description = "Visualize Gradle module dependencies as an HTML graph"
+        }
+    }
+}

@@ -1,4 +1,2 @@
-rootProject.name = "gradviz-project"
-
-include("gradviz-core")
-include("gradviz-plugin")
+rootProject.name = "gradviz-root"
+include("gradviz-core", "gradviz-plugin")
