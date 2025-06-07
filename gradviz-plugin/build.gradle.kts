@@ -1,20 +1,10 @@
 plugins {
     `java-gradle-plugin`
     id("com.gradle.plugin-publish") version "1.2.1"
-    base
-}
-
-allprojects {
-    group = "com.github.vitamaxDH"
-    version = "0.4.0"
-
-    repositories {
-        mavenCentral()
-    }
 }
 
 dependencies {
-    implementation("com.google.code.gson:gson:2.10.1")
+    implementation(project(":gradviz-core"))
 }
 
 gradlePlugin {
@@ -32,4 +22,4 @@ gradlePlugin {
 
 pluginBundle {
     tags = listOf("visualization", "dependency", "graph", "dependencies")
-}
+} 
