@@ -1,0 +1,33 @@
+plugins {
+    `java-gradle-plugin`
+    id("com.gradle.plugin-publish") version "1.2.1"
+    base
+}
+
+group = "com.github.vitamaxDH"
+version = "0.1.0"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("com.google.code.gson:gson:2.10.1")
+}
+
+gradlePlugin {
+    website.set("https://github.com/vitamaxDH/gradviz")
+    vcsUrl.set("https://github.com/vitamaxDH/gradviz")
+    plugins {
+        create("gradviz") {
+            id = "com.github.vitamaxDH.gradviz"
+            implementationClass = "io.vitamax.gradviz.GradvizPlugin"
+            displayName = "Gradle Dependency Visualizer"
+            description = "A plugin to visualize module dependencies as an interactive HTML graph."
+        }
+    }
+}
+
+pluginBundle {
+    tags = listOf("visualization", "dependency", "graph", "dependencies")
+} 
