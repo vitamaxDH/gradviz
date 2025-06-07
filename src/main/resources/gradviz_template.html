@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Interactive Gradle Dependency Visualizer</title>
+<script src="https://gw.alipayobjects.com/os/lib/antv/g6/4.8.24/dist/g6.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fuse.js/dist/fuse.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* Custom styles from original template and CSS file */
+.svg-container {
+    display: block;
+    position: relative;
+    width: 100%;
+    padding: 0;
+    overflow: hidden;
+}
+
+#g6-container {
+    /* width: 96%; Changed to 100% to fill container */
+}
+
+.path-item.foldable {
+    cursor: pointer;
+}
+
+.children-container {
+    padding-left: 1.25rem; /* pl-5 */
+    overflow: hidden;
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); /* ease-in-out */
+    transition-duration: 300ms; /* duration-300 */
+}
+
+.path-item-container.collapsed > .children-container {
+    max-height: 0;
+}
+
+.path-item-container:not(.collapsed) > .children-container {
+    max-height: 1000px; /* max-h-[1000px] */
+}
+
+.g6-minimap {
+    border: 1px solid #d1d5db; /* slate-300 */
+    border-radius: 8px; /* rounded-lg */
+    background-color: #f8fafc; /* slate-50 */
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-md */
+}
+
+.g6-tooltip {
+    border: 1px solid rgb(203 213 225); /* border border-slate-300 */
+    border-radius: 0.375rem; /* rounded-md */
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); /* shadow-lg */
+    background-color: rgb(248 250 252); /* bg-slate-50 */
+    padding: 0.5rem; /* p-2 */
+    font-size: 0.875rem; /* text-sm */
+    line-height: 1.25rem;
+} 
+</style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+<div class="p-4 md:p-8">
+  <header class="pb-4 mb-4">
+    <h1 class="text-3xl md:text-4xl font-bold mb-1 text-slate-900">Gradle Dependency Visualizer</h1>
+    <h2 id="module-info-header" class="text-xl md:text-2xl mb-4 text-slate-600 font-light">
+      <!-- Module info will be dynamically inserted here -->
+    </h2>
+    <div class="flex items-center gap-x-3">
+      <label for="search-input" class="font-medium text-slate-700">Library Search:</label>
+      <div class="relative w-2/5">
+        <input type="text" id="search-input" placeholder="e.g. spring-boot-starter" class="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all">
+        <div id="search-results" class="absolute mt-1 w-full bg-white border border-slate-300 rounded-lg shadow-xl max-h-72 overflow-y-auto hidden z-20"></div>
+      </div>
+    </div>
+  </header>
+  
+  <nav>
+    <ul id="tab-container" class="flex border-b border-slate-200">
+        <!-- Tabs are dynamically generated here -->
+    </ul>
+  </nav>
+
+  <main id="graph-area" class="h-[80vh] svg-container border-2 border-slate-200 rounded-b-lg rounded-tr-lg shadow-sm relative bg-white overflow-auto">
+    <div id="g6-container" class="w-full h-full"></div>
+
+    <div id="path-container" class="absolute top-4 left-4 w-1/4 max-h-[calc(100%_-_2rem)] overflow-y-auto z-10 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg shadow-lg text-sm p-3 hidden">
+      <p class="text-slate-500">Click on a library to see its dependency path here.</p>
+    </div>
+    <div class="absolute top-4 right-4 z-10">
+        <div class="flex flex-col items-end gap-y-2">
+            <button id="recenter-btn" title="Recenter Map" class="p-2 bg-white/80 border border-slate-300 rounded-md shadow-lg cursor-pointer hover:bg-slate-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-slate-700">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9M20.25 20.25h-4.5m4.5 0v-4.5m0-4.5L15 15" />
+                </svg>
+            </button>
+            <div id="minimap-container"></div>
+        </div>
+    </div>
+  </main>
+</div>
+<script>
+    window.allModulesData = %%DATA%%;
+</script>
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+    const allModulesData = window.allModulesData;
+    if (!allModulesData || allModulesData.length === 0) {
+        console.error("No module data found.");
+        document.getElementById('module-info-header').textContent = 'No data available to display.';
+        return;
+    }
+
+    // --- Global State ---
+    let activeGraph = null;
+    let activeFuse = null;
+    
+    // --- UI Elements ---
+    const g6Container = document.getElementById('g6-container');
+    const searchInput = document.getElementById('search-input');
+    const searchResults = document.getElementById('search-results');
+    const pathContainer = document.getElementById('path-container');
+    const moduleInfoHeader = document.getElementById('module-info-header');
+    const recenterBtn = document.getElementById('recenter-btn');
+    const tabContainer = document.getElementById('tab-container');
+    const minimapContainer = document.getElementById('minimap-container');
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+
+    // --- Graph Initialization ---
+    function initGraphForModule(moduleData) {
+        if (activeGraph && !activeGraph.get('destroyed')) {
+            activeGraph.destroy();
+        }
+        
+        g6Container.innerHTML = '';
+        minimapContainer.innerHTML = '';
+
+        const { tree, moduleName, configuration } = moduleData;
+
+        // 1. Process data: assign new unique IDs required by G6 and calculate node sizes.
+        let idCounter = 0;
+        const nodeMap = new Map();
+        function processData(node, parent) {
+            const newNode = { ...node, originalId: node.id, children: [] };
+            newNode.id = `node_${idCounter++}`;
+            nodeMap.set(newNode.id, newNode);
+
+            context.font = '12px sans-serif';
+            const textWidth = context.measureText(newNode.label).width;
+            newNode.size = [textWidth + 40, 30];
+
+            if (parent) newNode.parent = parent.id;
+            
+            if (node.children) {
+                newNode.children = node.children.map(child => processData(child, newNode));
+            }
+            return newNode;
+        }
+        const processedTree = processData(tree, null);
+
+        // 2. Create G6 Graph instance
+        activeGraph = new G6.TreeGraph({
+            container: g6Container,
+            width: g6Container.scrollWidth,
+            height: g6Container.scrollHeight || 600,
+            plugins: [new G6.Minimap({ container: minimapContainer, size: [150, 100], className: 'g6-minimap', type: 'delegate' })],
+            layout: {
+                type: 'compactBox', direction: 'LR', getId: d => d.id,
+                getHeight: () => 40, getWidth: d => d.size[0],
+                getVGap: () => 15, getHGap: () => 100,
+            },
+            defaultNode: {
+                type: 'rect',
+                style: { radius: 5, stroke: '#6B7280', fill: '#F9FAFB', lineWidth: 1, cursor: 'pointer' },
+                labelCfg: { style: { fill: '#1f2937', fontSize: 12 } },
+            },
+            defaultEdge: { type: 'cubic-horizontal', style: { stroke: '#9ca3af', lineWidth: 1.5 } },
+            nodeStateStyles: { 
+                selected: { stroke: '#0ea5e9', fill: '#e0f2fe', lineWidth: 2, shadowColor: '#38bdf8', shadowBlur: 10 },
+                ancestor: { stroke: '#f59e0b', fill: '#fef3c7', lineWidth: 2 },
+            },
+            edgeStateStyles: { selected: { stroke: '#0ea5e9', lineWidth: 2.5 } },
+            modes: { default: ['drag-canvas', 'zoom-canvas', { type: 'tooltip', formatText(model) { return model.label; }, offset: 20 }] },
+            animate: true
+        });
+
+        // 3. Setup event listeners for the new graph
+        recenterBtn.onclick = () => activeGraph.fitView();
+        activeGraph.on('node:click', (e) => handleNodeClick(e.item));
+        activeGraph.on('canvas:click', () => clearHighlight());
+        
+        // 4. Render graph
+        activeGraph.data(processedTree);
+        activeGraph.render();
+        activeGraph.fitView();
+
+        // 5. Setup search for this module
+        activeFuse = new Fuse(Array.from(nodeMap.values()), { keys: ['label'], includeScore: true, threshold: 0.4 });
+        
+        // 6. Update UI
+        moduleInfoHeader.innerHTML = `
+            Module: <strong class="font-semibold text-sky-600">${moduleName}</strong> | 
+            Configuration: <strong class="font-semibold text-slate-700">${configuration}</strong>
+        `;
+        searchInput.value = '';
+        searchResults.style.display = 'none';
+        clearHighlight();
+    }
+
+    function clearHighlight() {
+        activeGraph.getNodes().forEach(n => activeGraph.clearItemStates(n));
+        activeGraph.getEdges().forEach(e => activeGraph.clearItemStates(e));
+        pathContainer.classList.add('hidden');
+    }
+
+    function handleNodeClick(item) {
+        clearHighlight();
+        if (!item) return;
+
+        activeGraph.setItemState(item, 'selected', true);
+        const path = [];
+        let current = item;
+        while(current) {
+            path.unshift(current);
+            const parentEdge = current.getEdges().find(e => e.getTarget() === current);
+            if (!parentEdge) break;
+            current = parentEdge.getSource();
+        }
+
+        path.forEach((node, index) => {
+            if (index < path.length -1) {
+                const edge = node.getEdges().find(e => e.getSource() === node && e.getTarget() === path[index+1]);
+                if(edge) activeGraph.setItemState(edge, 'selected', true);
+            }
+            if (node !== item) {
+                activeGraph.setItemState(node, 'ancestor', true);
+            }
+        });
+        
+        buildPathUi(path);
+    }
+
+    function buildPathUi(path) {
+        if (!path || path.length === 0) {
+            pathContainer.innerHTML = '<p class="text-slate-500">Could not determine path.</p>';
+            pathContainer.classList.remove('hidden');
+            return;
+        }
+
+        pathContainer.innerHTML = ''; // Clear
+        const title = document.createElement('h3');
+        title.className = 'text-base font-semibold text-slate-800 mb-2 border-b pb-1.5';
+        title.textContent = 'Dependency Path';
+        pathContainer.appendChild(title);
+        
+        const list = document.createElement('ul');
+        list.className = 'space-y-1';
+
+        path.forEach((nodeItem, index) => {
+            const li = document.createElement('li');
+            li.className = 'flex items-center text-xs';
+            li.style.paddingLeft = `${index * 12}px`;
+            const isLast = index === path.length - 1;
+            li.innerHTML = `
+                <span class="text-slate-400 mr-1.5">${index > 0 ? '↳' : '●'}</span>
+                <span class="font-mono ${isLast ? 'font-bold text-sky-600' : 'text-slate-700'}">${nodeItem.getModel().label}</span>
+            `;
+            list.appendChild(li);
+        });
+
+        pathContainer.appendChild(list);
+        pathContainer.classList.remove('hidden');
+    }
+
+    // --- Search Logic ---
+    searchInput.addEventListener('input', (e) => {
+        const query = e.target.value;
+        searchResults.innerHTML = '';
+        if (!activeFuse || query.length < 2) {
+            searchResults.style.display = 'none'; return;
+        }
+        searchResults.style.display = 'block';
+        const results = activeFuse.search(query).slice(0, 10);
+        results.forEach((result) => {
+            const item = document.createElement('div');
+            item.className = 'result-item p-3 cursor-pointer hover:bg-sky-50 text-sm';
+            item.textContent = result.item.label;
+            item.setAttribute('tabindex', 0);
+            item.onclick = () => {
+                const nodeItem = activeGraph.findById(result.item.id);
+                if(nodeItem) {
+                    activeGraph.focusItem(nodeItem, true, { easing: 'easeCubic', duration: 500 });
+                    handleNodeClick(nodeItem);
+                }
+                searchResults.style.display = 'none';
+                searchInput.value = '';
+            };
+            searchResults.appendChild(item);
+        });
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!searchResults.contains(e.target) && e.target !== searchInput) {
+            searchResults.style.display = 'none';
+        }
+    });
+
+    // --- Tab Switching Logic ---
+    function switchTab(moduleName) {
+        const moduleData = allModulesData.find(d => d.moduleName === moduleName);
+        if (!moduleData) return;
+
+        tabContainer.querySelectorAll('.tab-link').forEach(link => {
+            const isSelected = link.dataset.moduleName === moduleName;
+            link.classList.toggle('bg-white', isSelected);
+            link.classList.toggle('border-l', isSelected);
+            link.classList.toggle('border-t', isSelected);
+            link.classList.toggle('border-r', isSelected);
+            link.classList.toggle('-mb-px', isSelected);
+            link.classList.toggle('text-sky-600', isSelected);
+            link.classList.toggle('font-semibold', isSelected);
+
+            link.classList.toggle('bg-slate-50', !isSelected);
+            link.classList.toggle('text-slate-500', !isSelected);
+            link.classList.toggle('border-transparent', !isSelected);
+        });
+
+        initGraphForModule(moduleData);
+    }
+    
+    tabContainer.addEventListener('click', (e) => {
+        const link = e.target.closest('.tab-link');
+        if (link && link.dataset.moduleName) {
+            switchTab(link.dataset.moduleName);
+        }
+    });
+
+    function createTabs() {
+        const tabHeaders = allModulesData.map((data, index) => `
+            <li class="mr-1">
+                <button data-module-name="${data.moduleName}" class="tab-link block py-2 px-4 rounded-t-lg border focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-400 transition-colors duration-150">
+                    ${data.moduleName}
+                </button>
+            </li>
+        `).join('');
+        tabContainer.innerHTML = tabHeaders;
+    }
+
+    // --- Initial Load ---
+    if (allModulesData && allModulesData.length > 0) {
+        createTabs();
+        switchTab(allModulesData[0].moduleName);
+    } else {
+         moduleInfoHeader.innerHTML = `<span class="text-rose-500">No dependency data was found.</span>`;
+    }
+
+    // --- Debounced Resize ---
+    let resizeTimer;
+    window.onresize = () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            if (!activeGraph || activeGraph.get('destroyed')) return;
+            activeGraph.changeSize(g6Container.scrollWidth, g6Container.scrollHeight);
+            activeGraph.fitView();
+        }, 200);
+    };
+});
+</script>
+</body>
+</html> 
