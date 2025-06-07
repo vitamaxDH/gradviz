@@ -11,14 +11,14 @@ Add the plugin to your `build.gradle.kts` (or `build.gradle`).
 **Kotlin DSL (`build.gradle.kts`)**
 ```kotlin
 plugins {
-    id("com.github.vitamaxDH.gradviz") version "0.4.0"
+    id("com.github.vitamaxDH.gradviz") version "0.4.1"
 }
 ```
 
 **Groovy DSL (`build.gradle`)**
 ```groovy
 plugins {
-    id 'com.github.vitamaxDH.gradviz' version '0.4.0'
+    id 'com.github.vitamaxDH.gradviz' version '0.4.1'
 }
 ```
 *After the plugin is successfully published to the Gradle Plugin Portal, users will not need to add any custom repositories.*
@@ -174,6 +174,15 @@ tasks.register<io.vitamax.gradviz.VisualizeDependenciesTask>("releaseGraph") {
 ```
 
 Now you can run `./gradlew releaseGraph` to get a graph specifically for your release configuration.
+
+---
+
+## 🏗️ Project Structure
+
+The project is organized into a multi-module structure:
+
+-   `gradviz-core`: Contains the main plugin logic, including dependency analysis and report generation.
+-   `gradviz-marker`: A marker artifact used for publishing to the Gradle Plugin Portal. It ensures that consumers can apply the plugin using the `plugins { ... }` block.
 
 ---
 
