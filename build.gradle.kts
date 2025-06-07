@@ -2,8 +2,8 @@ plugins {
     `java-gradle-plugin`
 }
 
-group = "io.vitamax.gradviz"
-version = "0.1.0"
+group = "com.github.vitamaxDH"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -17,7 +17,7 @@ dependencies {
 gradlePlugin {
     plugins {
         create("gradviz") {
-            id = "io.vitamax.gradviz"
+            id = "com.github.vitamaxDH.gradviz"
             implementationClass = "io.vitamax.gradviz.GradvizPlugin"
             displayName = "Gradle Dependency Visualizer"
             description = "A plugin to visualize module dependencies as an interactive HTML graph."

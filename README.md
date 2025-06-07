@@ -41,14 +41,14 @@ Add the plugin to your `build.gradle.kts` (or `build.gradle`).
 **Kotlin DSL (`build.gradle.kts`)**
 ```kotlin
 plugins {
-    id("com.github.vitamaxDH.gradviz") version "0.1.0"
+    id("com.github.vitamaxDH.gradviz") version "0.2.0"
 }
 ```
 
 **Groovy DSL (`build.gradle`)**
 ```groovy
 plugins {
-    id 'com.github.vitamaxDH.gradviz' version '0.1.0'
+    id 'com.github.vitamaxDH.gradviz' version '0.2.0'
 }
 ```
 
