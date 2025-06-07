@@ -1,8 +1,8 @@
-# GradViz - Gradle Dependency Visualizer
+# 🕸️ GradViz - Gradle Dependency Visualizer
 
 GradViz is a Gradle plugin that generates an interactive HTML report to visualize project dependencies. It helps you understand the complex dependency graph of your multi-module or single-module project.
 
-## Features
+## ✨ Features
 
 -   **Interactive Graph**: Uses G6.js to create a zoomable, pannable, and searchable graph.
 -   **Multi-Module Support**: Analyze a single module, a specific module, or all modules in your project.
@@ -11,7 +11,7 @@ GradViz is a Gradle plugin that generates an interactive HTML report to visualiz
 
 ---
 
-## How to Use
+## 🚀 How to Use
 
 To use this plugin in your project (e.g., a project named `my-app`), you first need to include the plugin's build and then apply it.
 
@@ -49,7 +49,7 @@ plugins {
 
 ---
 
-## Running the Task
+## ▶️ Running the Task
 
 Once the plugin is applied, the `gradViz` task becomes available.
 
@@ -67,7 +67,7 @@ By default, this will:
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 You can configure the task either via the command line (for quick changes) or in your `build.gradle.kts` (for permanent settings).
 
@@ -106,7 +106,7 @@ tasks.named<io.vitamax.gradviz.VisualizeDependenciesTask>("gradViz") {
 
 ---
 
-## Examples
+## 💡 Examples
 
 ### Example 1: Analyze the current module (default)
 
