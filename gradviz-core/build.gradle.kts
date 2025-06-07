@@ -3,7 +3,7 @@ plugins {
     base
 }
 
-group = "com.github.vitamaxDH"
+group = "com.github.vitamaxDH.gradviz"
 version = "0.1.0"
 
 repositories {
