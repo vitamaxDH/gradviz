@@ -2,6 +2,58 @@
 
 GradViz is a Gradle plugin that generates an interactive HTML report to visualize project dependencies. It helps you understand the complex dependency graph of your multi-module or single-module project.
 
+---
+
+## 🚀 Installation (Recommended)
+
+To use GradViz, add the JitPack repository to your settings file and then apply the plugin in your build file.
+
+### 1. Add JitPack to your repositories
+
+Add the JitPack repository in your `settings.gradle.kts` (or `settings.gradle`).
+
+**Kotlin DSL (`settings.gradle.kts`)**
+```kotlin
+pluginManagement {
+    repositories {
+        maven { url = uri("https://jitpack.io") }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+```
+
+**Groovy DSL (`settings.gradle`)**
+```groovy
+pluginManagement {
+    repositories {
+        maven { url 'https://jitpack.io' }
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+```
+
+### 2. Apply the plugin
+
+Add the plugin to your `build.gradle.kts` (or `build.gradle`).
+
+**Kotlin DSL (`build.gradle.kts`)**
+```kotlin
+plugins {
+    id("com.github.vitamaxDH.gradviz") version "0.1.0"
+}
+```
+
+**Groovy DSL (`build.gradle`)**
+```groovy
+plugins {
+    id 'com.github.vitamaxDH.gradviz' version '0.1.0'
+}
+```
+
+---
+
 ## ✨ Features
 
 -   **Interactive Graph**: Uses G6.js to create a zoomable, pannable, and searchable graph.
@@ -150,4 +202,30 @@ tasks.register<io.vitamax.gradviz.VisualizeDependenciesTask>("releaseGraph") {
 }
 ```
 
-Now you can run `./gradlew releaseGraph` to get a graph specifically for your release configuration. 
+Now you can run `./gradlew releaseGraph` to get a graph specifically for your release configuration.
+
+---
+
+## 🛠️ Development Setup (for contributors)
+
+If you want to contribute to this plugin, you can use `includeBuild` to test your local changes.
+
+In your test project's `settings.gradle.kts` file, add an `includeBuild` pointing to your local `gradviz` directory.
+
+```kotlin
+// settings.gradle.kts of my-app
+
+// Add this line to include the local gradviz plugin
+includeBuild("/path/to/your/gradviz-project-folder")
+```
+
+Then, in your test project's `build.gradle.kts`, apply the plugin using the ID defined in the `gradviz` build file.
+
+```kotlin
+// build.gradle.kts of my-app
+
+plugins {
+    // ... your other plugins
+    id("io.vitamax.gradviz")
+}
+``` 
