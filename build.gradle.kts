@@ -1,10 +1,11 @@
 plugins {
-    `java-gradle-plugin`
-    `maven-publish`
+    id("java-gradle-plugin")
+    id("maven-publish")
+    id("com.gradle.plugin-publish") version "1.2.1" // Use the latest available
 }
 
-group = "com.github.vitamaxDH"
-version = "0.1.2"
+group = "io.github.vitamaxDH"
+version = "0.2.0"
 
 repositories {
     mavenCentral()
@@ -15,10 +16,15 @@ dependencies {
 }
 
 gradlePlugin {
+    website.set("https://github.com/vitamaxDH/gradviz")
+    vcsUrl.set("https://github.com/vitamaxDH/gradviz.git")
     plugins {
         create("gradviz") {
-            id = "com.github.vitamaxDH.gradviz"
+            id = "io.github.vitamaxDH.gradviz"
+            displayName = "Gradviz Plugin"
+            description = "A Gradle plugin for visualizing Gradle builds"
             implementationClass = "io.vitamax.gradviz.GradvizPlugin"
+            tags.set(listOf("visualization", "gradle dependency", "build"))
         }
     }
 }
@@ -27,11 +33,11 @@ publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
-            // (원한다면) artifactId, pom metadata 등은 그대로 유지
             artifactId = project.name
             pom {
                 name.set("Gradviz Plugin Marker & Artifact")
-                description.set("JAR + POM for com.github.vitamaxDH:gradviz plugin")
+                description.set("JAR + POM for io.github.vitamaxDH:gradviz plugin")
+                url.set("https://github.com/vitamaxDH/gradviz")
             }
         }
     }
