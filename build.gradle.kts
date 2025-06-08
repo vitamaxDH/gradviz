@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "com.github.vitamaxDH"
-version = "0.1.1"
+version = "0.1.2"
 
 repositories {
     mavenCentral()
@@ -23,14 +23,16 @@ gradlePlugin {
     }
 }
 
-// --------------------------------------------------
-// 'gradle publish' 시에 JAR+POM을 생성해주는 기본 publication
-// JitPack은 이 publication을 읽어서 아티팩트를 배포합니다.
-// --------------------------------------------------
 publishing {
     publications {
-        create<MavenPublication>("pluginMaven") {
+        create<MavenPublication>("mavenJava") {
             from(components["java"])
+            // (원한다면) artifactId, pom metadata 등은 그대로 유지
+            artifactId = project.name
+            pom {
+                name.set("Gradviz Plugin Marker & Artifact")
+                description.set("JAR + POM for com.github.vitamaxDH:gradviz plugin")
+            }
         }
     }
 }
