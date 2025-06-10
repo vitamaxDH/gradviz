@@ -11,14 +11,14 @@ Add the plugin to your `build.gradle.kts` (or `build.gradle`).
 **Kotlin DSL (`build.gradle.kts`)**
 ```kotlin
 plugins {
-    id("io.vitamax.gradviz") version "0.1.0"
+    id("io.github.vitamaxDH.gradviz") version "0.1.1"
 }
 ```
 
 **Groovy DSL (`build.gradle`)**
 ```groovy
 plugins {
-    id 'io.vitamax.gradviz' version '0.1.0'
+    id 'io.github.vitamaxDH.gradviz' version '0.1.1'
 }
 ```
 *After the plugin is successfully published to the Gradle Plugin Portal, users will not need to add any custom repositories.*
@@ -66,7 +66,7 @@ In your project's `build.gradle.kts` file, apply the plugin using its ID.
 
 plugins {
     // ... your other plugins
-    id("io.vitamax.gradviz")
+    id("io.github.vitamaxDH.gradviz")
 }
 ```
 
@@ -206,6 +206,6 @@ Then, in your test project's `build.gradle.kts`, apply the plugin using the ID d
 
 plugins {
     // ... your other plugins
-    id("io.vitamax.gradviz")
+    id("io.github.vitamaxDH.gradviz")
 }
 ``` 
