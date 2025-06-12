@@ -139,6 +139,21 @@ tasks.named<io.vitamax.gradviz.VisualizeDependenciesTask>("gradViz") {
 
 ---
 
+### Gradle :dependencies Task Options
+
+| Option                   | Type    | Default   | Description                                                                 |
+|--------------------------|---------|-----------|-----------------------------------------------------------------------------|
+| `--configuration`        | String  | (none)    | Show dependencies for a specific configuration (e.g., `compileClasspath`).  |
+| `--scan`                 | Boolean | false     | Publish a build scan for the dependencies report.                           |
+| `--write-locks`          | Boolean | false     | Write dependency lock files.                                                |
+| `--refresh-dependencies` | Boolean | false     | Refresh all dependencies, ignoring caches.                                  |
+| `--console`              | String  | auto      | Console output mode (`auto`, `plain`, `rich`, `verbose`).                   |
+| `--warning-mode`         | String  | summary   | Warning display mode (`all`, `fail`, `none`, `summary`).                    |
+| `--no-rebuild`           | Boolean | false     | Show the dependency graph without triggering a build.                       |
+| `--info`, `--debug`, `--stacktrace`, `-q`, `-d`, `-S` | Flags |         | Standard Gradle logging and troubleshooting options.                         |
+
+---
+
 ## 💡 Examples
 
 ### Example 1: Analyze the current module (default)
