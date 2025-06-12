@@ -129,6 +129,16 @@ tasks.named<io.vitamax.gradviz.VisualizeDependenciesTask>("gradViz") {
 
 ---
 
+### Task Input Properties
+
+| Property         | Type           | Default                | Description                                              |
+|------------------|----------------|------------------------|----------------------------------------------------------|
+| `configurations` | List<String>   | `["runtimeClasspath"]`| List of Gradle configurations to analyze (in order).      |
+| `modulePath`     | String         | (current module)       | Module path to analyze (e.g., `:app`, `all`).             |
+| `openReport`     | Boolean        | `true`                 | Whether to open the report in the browser automatically.  |
+
+---
+
 ## 💡 Examples
 
 ### Example 1: Analyze the current module (default)
