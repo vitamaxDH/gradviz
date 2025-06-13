@@ -37,7 +37,7 @@ plugins {
 -   **Improved accessibility** with ARIA labels
 -   **Optimized panel interaction code**
 
-![GradViz 0.2.0 Screenshot](assets/images/gradviz-0.2.0%20screenshot.png)
+![GradViz 0.2.0 Screenshot](assets/images/gradviz-0.2.0 screenshot.png)
 *Dependency path panel with close button, ESC key support, and smooth animations (v0.2.0)*
 
 ---
