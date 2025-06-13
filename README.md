@@ -37,7 +37,7 @@ plugins {
 -   **Improved accessibility** with ARIA labels
 -   **Optimized panel interaction code**
 
-![GradViz 0.2.0 Screenshot](./assets/images/gradviz-0.2.0-screenshot.png)
+![GradViz 0.2.0 Screenshot](./assets/images/gradviz-0.2.0%20screenshot.png)
 *Dependency path panel with close button, ESC key support, and smooth animations (v0.2.0)*
 
 ---
@@ -162,21 +162,14 @@ This generates a report for the `:app` module using its `runtimeClasspath`.
 
 ### Example 2: Analyze all modules in the project
 
-Run this from the project's root directory.
+Simply add the plugin to the top-level module's `build.gradle.kts` (remove it from any submodules), then run:
 
 ```bash
-./gradlew gradViz -PmodulePath=all
+./gradlew gradViz
 ```
 This generates a report containing tabs for every submodule.
 
-### Example 3: Analyze a specific module and don't open the report
-
-```bash
-./gradlew gradViz -PmodulePath=:core -PopenReport=false
-```
-This generates a report for the `:core` module and prints the file path to the console without opening it.
-
-### Example 4: Configure a custom task for Android release dependencies
+### Example 3: Configure a custom task for Android release dependencies
 
 You can register a separate task for a specific purpose.
 
@@ -197,10 +190,11 @@ Now you can run `./gradlew releaseGraph` to get a graph specifically for your re
 
 ## 🏗️ Project Structure
 
-The project is organized into a multi-module structure:
+The project is organized as a single Gradle plugin module containing:
 
--   `gradviz-core`: Contains the main plugin logic, including dependency analysis and report generation.
--   `gradviz-marker`: A marker artifact used for publishing to the Gradle Plugin Portal. It ensures that consumers can apply the plugin using the `plugins { ... }` block.
+-   Main plugin logic for dependency analysis and report generation
+-   Interactive HTML report generation using G6.js
+-   Gradle plugin configuration and task registration
 
 ---
 
