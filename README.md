@@ -32,6 +32,9 @@ plugins {
 -   **Configurable**: Customize the Gradle configuration to analyze, and control how the report is generated.
 -   **Easy to Use**: Get started quickly with sensible defaults.
 
+![GradViz 0.2.0 Screenshot](assets/images/gradviz-0.2.0%20screenshot.png)
+*Dependency path panel with close button, ESC key support, and smooth animations (v0.2.0)*
+
 ---
 
 ## 🚀 How to Use
