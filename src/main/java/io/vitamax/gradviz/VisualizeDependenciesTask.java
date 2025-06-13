@@ -10,8 +10,8 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
+import org.gradle.api.tasks.Internal;
 import org.gradle.api.tasks.Optional;
-import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 import java.awt.Desktop;
@@ -30,9 +30,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("deprecation")
 public abstract class VisualizeDependenciesTask extends DefaultTask {
 
-    @OutputFile
+    @Internal
     public abstract RegularFileProperty getOutputFile();
 
     @Input
@@ -49,30 +50,39 @@ public abstract class VisualizeDependenciesTask extends DefaultTask {
         getOutputFile().set(getProject().getLayout().getBuildDirectory().file("reports/dependency-graph/index.html"));
         getConfigurations().convention(Arrays.asList("runtimeClasspath"));
         getOpenReport().convention(true);
+        getOutputs().upToDateWhen(s -> false);
     }
 
     @TaskAction
     public void run() throws IOException {
         List<ModuleReport> allModuleReports = new ArrayList<>();
 
-        List<Project> targetProjects;
+        List<Project> targetProjects = new ArrayList<>();
         if (getModulePath().isPresent()) {
             String path = getModulePath().get();
-            // Special keyword 'all' to analyze all projects
             if ("all".equalsIgnoreCase(path)) {
-                targetProjects = new ArrayList<>();
-                targetProjects.add(getProject().getRootProject());
+                // User explicitly requested 'all', analyze all subprojects
+                getLogger().lifecycle("modulePath=all specified. Analyzing all sub-projects.");
                 targetProjects.addAll(getProject().getRootProject().getSubprojects());
             } else {
                 Project target = getProject().getRootProject().findProject(path);
                 if (target == null) {
                     throw new GradleException("Module with path '" + path + "' not found. Make sure it's a valid project path (e.g., ':app').");
                 }
-                targetProjects = Arrays.asList(target);
+                targetProjects.add(target);
             }
         } else {
-            // Default behavior: analyze the current project where the task is executed
-            targetProjects = Arrays.asList(getProject());
+            // No modulePath provided, let's be smart
+            Project currentProject = getProject();
+            if (currentProject == currentProject.getRootProject()) {
+                // If run from root, analyze all subprojects automatically
+                getLogger().lifecycle("Running from root. Analyzing all sub-projects automatically.");
+                targetProjects.addAll(currentProject.getSubprojects());
+            } else {
+                // If run from a subproject, analyze only that one
+                getLogger().lifecycle("Running from sub-project. Analyzing current project only: " + currentProject.getPath());
+                targetProjects.add(currentProject);
+            }
         }
 
         for (Project p : targetProjects) {
@@ -96,18 +106,17 @@ public abstract class VisualizeDependenciesTask extends DefaultTask {
             return;
         }
 
+        // Output all module results as tabs in a single HTML file
         String jsonData = new Gson().toJson(allModuleReports);
+        String projectName = getProject().getRootProject().getName();
+        File outputFile = new File(getProject().getBuildDir(), "reports/dependency-graph/" + projectName + "-dependencies-graph.html");
+        getOutputFile().set(outputFile);
         generateReport(jsonData);
 
-        URI reportUri = getOutputFile().get().getAsFile().toURI();
+        URI reportUri = outputFile.toURI();
         getLogger().lifecycle("✅ Dependency report generated at: " + reportUri);
-        
         if (getOpenReport().get()) {
-            try {
-                Desktop.getDesktop().browse(reportUri);
-            } catch (Exception e) {
-                getLogger().warn("Could not open report in browser: " + e.getMessage());
-            }
+            openInBrowser(reportUri);
         }
     }
 
@@ -159,6 +168,19 @@ public abstract class VisualizeDependenciesTask extends DefaultTask {
         
         try (FileWriter writer = new FileWriter(reportFile)) {
             writer.write(finalHtml);
+        }
+    }
+
+    @SuppressWarnings("deprecation")
+    private void openInBrowser(URI uri) {
+        if (java.awt.Desktop.isDesktopSupported()) {
+            try {
+                java.awt.Desktop.getDesktop().browse(uri);
+            } catch (Exception e) {
+                getLogger().warn("Could not open report in browser: " + e.getMessage());
+            }
+        } else {
+            getLogger().warn("Desktop is not supported (possibly headless environment). Please open the report manually: " + uri);
         }
     }
 } 

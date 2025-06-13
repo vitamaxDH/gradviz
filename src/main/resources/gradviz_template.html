@@ -55,7 +55,127 @@
     padding: 0.5rem; /* p-2 */
     font-size: 0.875rem; /* text-sm */
     line-height: 1.25rem;
-} 
+}
+
+.path-li {
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+}
+
+.path-li:hover {
+    background-color: #bae6fd;
+}
+
+.path-li.active {
+    background-color: #e0f2fe;
+    font-weight: bold;
+}
+
+.g6-node-selected rect,
+.g6-node-path-active rect {
+    stroke: #0ea5e9 !important;
+    stroke-width: 6px !important;
+    fill: #e0f2fe !important;
+    filter: drop-shadow(0 0 8px #38bdf8);
+    height: 60px !important;
+    width: 320px !important;
+    transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.g6-node-selected text,
+.g6-node-path-active text {
+    font-size: 28px !important;
+    font-weight: bold;
+    fill: #0ea5e9 !important;
+    transition: font-size 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.g6-node rect {
+    height: 30px !important;
+    width: 160px !important;
+    transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.g6-node text {
+    font-size: 12px !important;
+    transition: font-size 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.g6-edge path {
+    stroke-width: 1.5px !important;
+    transition: stroke-width 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.g6-edge-selected path {
+    stroke-width: 4.5px !important;
+    stroke: #0ea5e9 !important;
+    transition: stroke-width 0.18s cubic-bezier(0.4,0,0.2,1);
+}
+
+.group-block { margin-bottom: 0.5rem; padding-left: 0.5rem; border-left: 4px solid #e5e7eb; }
+.group-title { font-weight: bold; color: #334155; font-size: 0.8rem; margin-bottom: 0.25rem; }
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  color: #64748b;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.copy-btn:hover, .copy-btn:focus {
+  opacity: 1;
+  color: #0ea5e9;
+}
+.copy-btn.copied {
+  color: #22c55e;
+  opacity: 1;
+}
+.path-li .copy-btn {
+  display: none;
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.path-li:hover .copy-btn {
+  display: inline-flex;
+}
+
+.square-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  max-width: 36px;
+  max-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  font-weight: bold;
+  padding: 0;
+}
+.square-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.zoom-label {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin: 0 0.25rem;
+  user-select: none;
+}
+
+#path-container.is-visible {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    pointer-events: auto;
+}
 </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans">
@@ -84,11 +204,18 @@
   <main id="graph-area" class="h-[80vh] svg-container border-2 border-slate-200 rounded-b-lg rounded-tr-lg shadow-sm relative bg-white overflow-auto">
     <div id="g6-container" class="w-full h-full"></div>
 
-    <div id="path-container" class="absolute top-4 left-4 w-1/4 max-h-[calc(100%_-_2rem)] overflow-y-auto z-10 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg shadow-lg text-sm p-3 hidden">
+    <div id="path-container" class="absolute top-4 left-4 w-1/4 max-h-[calc(100%_-_2rem)] overflow-y-auto z-10 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg shadow-lg text-sm p-3 transition-opacity transition-transform duration-300 ease-in-out opacity-0 -translate-x-4 scale-95 pointer-events-none">
       <p class="text-slate-500">Click on a library to see its dependency path here.</p>
     </div>
     <div class="absolute top-4 right-4 z-10">
         <div class="flex flex-col items-end gap-y-2">
+            <div class="flex items-center gap-x-1 mb-2">
+                <span class="zoom-label">0.1</span>
+                <button id="zoom-out-btn" title="Zoom Out" class="square-btn bg-white/80 border border-slate-300 rounded-md shadow-lg cursor-pointer hover:bg-slate-100 transition-colors" aria-label="Zoom Out">-</button>
+                <input id="zoom-input" type="number" min="0.1" max="5" step="0.1" value="1" class="w-14 text-center border border-slate-300 rounded-md px-1 py-1 text-sm mx-1" title="Set zoom level (0.1~5)">
+                <button id="zoom-in-btn" title="Zoom In" class="square-btn bg-white/80 border border-slate-300 rounded-md shadow-lg cursor-pointer hover:bg-slate-100 transition-colors" aria-label="Zoom In">+</button>
+                <span class="zoom-label">5</span>
+            </div>
             <button id="recenter-btn" title="Recenter Map" class="p-2 bg-white/80 border border-slate-300 rounded-md shadow-lg cursor-pointer hover:bg-slate-100 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 text-slate-700">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9M20.25 20.25h-4.5m4.5 0v-4.5m0-4.5L15 15" />
@@ -114,6 +241,11 @@ window.addEventListener('DOMContentLoaded', () => {
     // --- Global State ---
     let activeGraph = null;
     let activeFuse = null;
+    let lastDependencyPath = null;
+    let currentLeafNodeId = null;
+    let pendingFocusNodeId = null;
+    let pendingFocusNodeLabel = null;
+    let pendingFocusModuleName = null;
     
     // --- UI Elements ---
     const g6Container = document.getElementById('g6-container');
@@ -124,6 +256,9 @@ window.addEventListener('DOMContentLoaded', () => {
     const recenterBtn = document.getElementById('recenter-btn');
     const tabContainer = document.getElementById('tab-container');
     const minimapContainer = document.getElementById('minimap-container');
+    const zoomInBtn = document.getElementById('zoom-in-btn');
+    const zoomOutBtn = document.getElementById('zoom-out-btn');
+    const zoomInput = document.getElementById('zoom-input');
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -173,28 +308,55 @@ window.addEventListener('DOMContentLoaded', () => {
             },
             defaultNode: {
                 type: 'rect',
+                size: [160, 30],
                 style: { radius: 5, stroke: '#6B7280', fill: '#F9FAFB', lineWidth: 1, cursor: 'pointer' },
                 labelCfg: { style: { fill: '#1f2937', fontSize: 12 } },
             },
             defaultEdge: { type: 'cubic-horizontal', style: { stroke: '#9ca3af', lineWidth: 1.5 } },
             nodeStateStyles: { 
-                selected: { stroke: '#0ea5e9', fill: '#e0f2fe', lineWidth: 2, shadowColor: '#38bdf8', shadowBlur: 10 },
-                ancestor: { stroke: '#f59e0b', fill: '#fef3c7', lineWidth: 2 },
+                selected: { stroke: '#0ea5e9', fill: '#e0f2fe', lineWidth: 6, shadowColor: '#38bdf8', shadowBlur: 20 },
+                ancestor: { stroke: '#f59e0b', fill: '#fef3c7', lineWidth: 4 },
+                pathactive: { stroke: '#0ea5e9', fill: '#e0f2fe', lineWidth: 6, shadowColor: '#38bdf8', shadowBlur: 20 }
             },
-            edgeStateStyles: { selected: { stroke: '#0ea5e9', lineWidth: 2.5 } },
-            modes: { default: ['drag-canvas', 'zoom-canvas', { type: 'tooltip', formatText(model) { return model.label; }, offset: 20 }] },
-            animate: true
+            edgeStateStyles: { selected: { stroke: '#0ea5e9', lineWidth: 4.5 } },
+            modes: { default: ['drag-canvas', 'zoom-canvas', 'drag-node', { type: 'tooltip', formatText(model) { return model.label; }, offset: 20 }] },
+            animate: true,
+            minZoom: 0.1,
+            maxZoom: 5
         });
 
         // 3. Setup event listeners for the new graph
         recenterBtn.onclick = () => activeGraph.fitView();
-        activeGraph.on('node:click', (e) => handleNodeClick(e.item));
+        activeGraph.on('node:click', (e) => handleNodeClick(e.item, undefined, true));
         activeGraph.on('canvas:click', () => clearHighlight());
         
         // 4. Render graph
         activeGraph.data(processedTree);
         activeGraph.render();
         activeGraph.fitView();
+
+        // --- Auto-select and focus root node ---
+        // Only clear content after animation ends (transitionend)
+        // Clear content after animation ends (when panel is fully closed)
+        // --- Title + path copy button row ---
+        // Path copy button
+        // --- Group by and render ---
+        // Individual dependency copy button
+        // Highlight parent edges
+        // Zoom in button hold
+        // Zoom out button hold
+        // Allow only numbers
+        // Sync zoom input with graph zoom
+        // Sync input on every graph render
+
+        // --- 루트 노드 자동 선택 및 포커스 ---
+        const rootNode = activeGraph.findById(processedTree.id);
+        if (rootNode) {
+            activeGraph.fitCenter();
+            activeGraph.zoomTo(1, { x: g6Container.scrollWidth / 2, y: g6Container.scrollHeight / 2 });
+            activeGraph.focusItem(rootNode, true, { easing: 'easeCubic', duration: 500 });
+            handleNodeClick(rootNode);
+        }
 
         // 5. Setup search for this module
         activeFuse = new Fuse(Array.from(nodeMap.values()), { keys: ['label'], includeScore: true, threshold: 0.4 });
@@ -207,15 +369,30 @@ window.addEventListener('DOMContentLoaded', () => {
         searchInput.value = '';
         searchResults.style.display = 'none';
         clearHighlight();
+
+        syncZoomInputOnGraph();
     }
 
     function clearHighlight() {
         activeGraph.getNodes().forEach(n => activeGraph.clearItemStates(n));
         activeGraph.getEdges().forEach(e => activeGraph.clearItemStates(e));
-        pathContainer.classList.add('hidden');
+        pathContainer.classList.remove('opacity-100', 'translate-x-0', 'scale-100', 'pointer-events-auto');
+        pathContainer.classList.add('opacity-0', '-translate-x-4', 'scale-95', 'pointer-events-none');
+        // 내부 내용은 애니메이션이 끝난 후에만 비움 (transitionend에서)
     }
 
-    function handleNodeClick(item) {
+    // 닫힐 때 애니메이션이 끝나면 내부 내용 비우기 (패널이 완전히 닫힌 상태에서만)
+    pathContainer.addEventListener('transitionend', (e) => {
+        if (
+            e.propertyName === 'opacity' &&
+            pathContainer.classList.contains('opacity-0') &&
+            pathContainer.classList.contains('pointer-events-none')
+        ) {
+            pathContainer.innerHTML = '<p class="text-slate-500">Click on a library to see its dependency path here.</p>';
+        }
+    });
+
+    function handleNodeClick(item, activeNodeId, isGraphClick = true) {
         clearHighlight();
         if (!item) return;
 
@@ -225,53 +402,169 @@ window.addEventListener('DOMContentLoaded', () => {
         while(current) {
             path.unshift(current);
             const parentEdge = current.getEdges().find(e => e.getTarget() === current);
+            if (parentEdge) {
+                activeGraph.setItemState(parentEdge, 'selected', true);
+            }
             if (!parentEdge) break;
             current = parentEdge.getSource();
         }
-
-        path.forEach((node, index) => {
-            if (index < path.length -1) {
-                const edge = node.getEdges().find(e => e.getSource() === node && e.getTarget() === path[index+1]);
-                if(edge) activeGraph.setItemState(edge, 'selected', true);
-            }
-            if (node !== item) {
-                activeGraph.setItemState(node, 'ancestor', true);
-            }
-        });
-        
-        buildPathUi(path);
+        if (isGraphClick) {
+            lastDependencyPath = path;
+            currentLeafNodeId = item.id;
+        }
+        buildPathUi(lastDependencyPath || path, activeNodeId || item.id);
     }
 
-    function buildPathUi(path) {
+    function buildPathUi(path, activeNodeId) {
         if (!path || path.length === 0) {
             pathContainer.innerHTML = '<p class="text-slate-500">Could not determine path.</p>';
-            pathContainer.classList.remove('hidden');
+            pathContainer.classList.add('opacity-100', 'translate-x-0', 'scale-100', 'pointer-events-auto');
+            pathContainer.classList.remove('opacity-0', '-translate-x-4', 'scale-95', 'pointer-events-none');
             return;
         }
 
-        pathContainer.innerHTML = ''; // Clear
+        pathContainer.innerHTML = '';
+        // --- Title + path copy button row ---
+        const titleRow = document.createElement('div');
+        titleRow.className = 'flex items-center justify-between mb-2';
         const title = document.createElement('h3');
-        title.className = 'text-base font-semibold text-slate-800 mb-2 border-b pb-1.5';
+        title.className = 'text-base font-semibold text-slate-800 border-b pb-1.5';
         title.textContent = 'Dependency Path';
-        pathContainer.appendChild(title);
-        
-        const list = document.createElement('ul');
-        list.className = 'space-y-1';
+        titleRow.appendChild(title);
 
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'flex items-center';
+
+        // Path copy button
+        const pathCopyBtn = document.createElement('button');
+        pathCopyBtn.className = 'copy-btn ml-2';
+        pathCopyBtn.setAttribute('aria-label', 'Copy full dependency path');
+        pathCopyBtn.textContent = 'copy';
+        pathCopyBtn.onclick = () => {
+            const depNames = path.map(nodeItem => nodeItem.getModel().label);
+            const pathStr = depNames.join(' > ');
+            navigator.clipboard.writeText(pathStr);
+            pathCopyBtn.classList.add('copied');
+            pathCopyBtn.textContent = 'copied!';
+            setTimeout(() => {
+                pathCopyBtn.classList.remove('copied');
+                pathCopyBtn.textContent = 'copy';
+            }, 900);
+        };
+        controlsDiv.appendChild(pathCopyBtn);
+
+        // close button
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'ml-2 text-slate-500 hover:text-slate-800 text-2xl leading-none';
+        closeBtn.innerHTML = '&times;';
+        closeBtn.setAttribute('aria-label', 'Close dependency path');
+        closeBtn.onclick = () => clearHighlight();
+        controlsDiv.appendChild(closeBtn);
+
+        titleRow.appendChild(controlsDiv);
+        pathContainer.appendChild(titleRow);
+
+        // --- Group by and render ---
+        let groupBlocks = [];
+        let currentGroup = null;
+        let currentGroupId = null;
+        let currentGroupNodes = [];
+        function parseGroupId(artifact) {
+            if (!artifact) return '';
+            const parts = artifact.split(':');
+            return parts.length > 1 ? parts[0] : '';
+        }
+        function parseArtifactIdAndVersion(artifact) {
+            const parts = artifact.split(':');
+            if (parts.length === 3) return parts[1] + ':' + parts[2];
+            if (parts.length === 2) return parts[1];
+            return artifact;
+        }
         path.forEach((nodeItem, index) => {
-            const li = document.createElement('li');
-            li.className = 'flex items-center text-xs';
-            li.style.paddingLeft = `${index * 12}px`;
-            const isLast = index === path.length - 1;
-            li.innerHTML = `
-                <span class="text-slate-400 mr-1.5">${index > 0 ? '↳' : '●'}</span>
-                <span class="font-mono ${isLast ? 'font-bold text-sky-600' : 'text-slate-700'}">${nodeItem.getModel().label}</span>
-            `;
-            list.appendChild(li);
+            const label = nodeItem.getModel().label;
+            const groupId = parseGroupId(label);
+            const artifactVer = parseArtifactIdAndVersion(label);
+            const nodeId = typeof nodeItem.getID === 'function' ? nodeItem.getID() : nodeItem.id;
+            const isActive = activeNodeId && nodeId === activeNodeId;
+            if (groupId !== currentGroupId) {
+                if (currentGroupNodes.length > 0) {
+                    groupBlocks.push({ groupId: currentGroupId, nodes: currentGroupNodes });
+                }
+                currentGroupId = groupId;
+                currentGroupNodes = [];
+            }
+            currentGroupNodes.push({ artifactVer, nodeId, isActive, fullLabel: label });
+        });
+        if (currentGroupNodes.length > 0) {
+            groupBlocks.push({ groupId: currentGroupId, nodes: currentGroupNodes });
+        }
+
+        groupBlocks.forEach((group, gidx) => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'mb-2 pl-2 border-l-4 border-slate-200';
+            if (group.groupId) {
+                const groupTitle = document.createElement('div');
+                groupTitle.className = 'font-bold text-slate-700 text-xs mb-1';
+                groupTitle.textContent = group.groupId;
+                groupDiv.appendChild(groupTitle);
+            }
+            const ul = document.createElement('ul');
+            ul.className = 'ml-2';
+            group.nodes.forEach((node, nidx) => {
+                const li = document.createElement('li');
+                li.className = 'path-li text-xs mb-0.5';
+                li.style.display = 'flex';
+                li.style.alignItems = 'center';
+                li.style.cursor = 'pointer';
+                li.dataset.nodeId = node.nodeId;
+                li.onclick = (e) => {
+                    e.stopPropagation();
+                    focusOnPathNodeById(node.nodeId);
+                };
+                if (node.isActive) li.classList.add('active');
+                li.innerHTML = `<span class="font-mono ${node.isActive ? 'font-bold text-sky-600' : 'text-slate-700'}">${node.artifactVer}</span>`;
+                // Individual dependency copy button
+                const depCopyBtn = document.createElement('button');
+                depCopyBtn.className = 'copy-btn';
+                depCopyBtn.setAttribute('aria-label', 'Copy full dependency name');
+                depCopyBtn.textContent = 'copy';
+                depCopyBtn.onclick = (ev) => {
+                    ev.stopPropagation();
+                    navigator.clipboard.writeText(node.fullLabel);
+                    depCopyBtn.classList.add('copied');
+                    depCopyBtn.textContent = 'copied!';
+                    setTimeout(() => {
+                        depCopyBtn.classList.remove('copied');
+                        depCopyBtn.textContent = 'copy';
+                    }, 900);
+                };
+                li.appendChild(depCopyBtn);
+                ul.appendChild(li);
+            });
+            groupDiv.appendChild(ul);
+            pathContainer.appendChild(groupDiv);
         });
 
-        pathContainer.appendChild(list);
-        pathContainer.classList.remove('hidden');
+        pathContainer.classList.add('opacity-100', 'translate-x-0', 'scale-100', 'pointer-events-auto');
+        pathContainer.classList.remove('opacity-0', '-translate-x-4', 'scale-95', 'pointer-events-none');
+    }
+
+    function focusOnPathNodeById(nodeId) {
+        const node = activeGraph.findById(nodeId);
+        if (node && lastDependencyPath) {
+            clearHighlight();
+            activeGraph.setItemState(node, 'selected', true);
+            // Highlight parent edges
+            let current = node;
+            while(current) {
+                const parentEdge = current.getEdges().find(e => e.getTarget() === current);
+                if (parentEdge) activeGraph.setItemState(parentEdge, 'selected', true);
+                if (!parentEdge) break;
+                current = parentEdge.getSource();
+            }
+            activeGraph.focusItem(node, true, { easing: 'easeCubic', duration: 500 });
+            buildPathUi(lastDependencyPath, nodeId);
+        }
     }
 
     // --- Search Logic ---
@@ -281,18 +574,31 @@ window.addEventListener('DOMContentLoaded', () => {
         if (!activeFuse || query.length < 2) {
             searchResults.style.display = 'none'; return;
         }
-        searchResults.style.display = 'block';
+        // Only search the current module (activeGraph)
         const results = activeFuse.search(query).slice(0, 10);
+        if (results.length === 0) {
+            searchResults.style.display = 'none';
+            return;
+        }
+        searchResults.style.display = 'block';
         results.forEach((result) => {
             const item = document.createElement('div');
             item.className = 'result-item p-3 cursor-pointer hover:bg-sky-50 text-sm';
             item.textContent = result.item.label;
             item.setAttribute('tabindex', 0);
             item.onclick = () => {
-                const nodeItem = activeGraph.findById(result.item.id);
-                if(nodeItem) {
+                pendingFocusNodeId = result.item.id;
+                pendingFocusNodeLabel = result.item.label;
+                pendingFocusModuleName = null;
+                console.log('[SearchResultClick] pendingFocusNodeId:', pendingFocusNodeId, 'pendingFocusNodeLabel:', pendingFocusNodeLabel);
+                // No tab switch needed, just focus in current graph
+                const nodeItem = findNodeByLabel(pendingFocusNodeLabel);
+                if (nodeItem) {
+                    console.log('[FocusNode] Focusing node by label', pendingFocusNodeLabel);
                     activeGraph.focusItem(nodeItem, true, { easing: 'easeCubic', duration: 500 });
-                    handleNodeClick(nodeItem);
+                    handleNodeClick(nodeItem, nodeItem.getID ? nodeItem.getID() : nodeItem.id);
+                } else {
+                    console.log('[FocusNode] Node not found by label:', pendingFocusNodeLabel);
                 }
                 searchResults.style.display = 'none';
                 searchInput.value = '';
@@ -304,6 +610,12 @@ window.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
         if (!searchResults.contains(e.target) && e.target !== searchInput) {
             searchResults.style.display = 'none';
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            clearHighlight();
         }
     });
 
@@ -366,6 +678,196 @@ window.addEventListener('DOMContentLoaded', () => {
             activeGraph.fitView();
         }, 200);
     };
+
+    function updateZoomInput(val) {
+        val = Math.max(0.1, Math.min(5, Number(val)));
+        zoomInput.value = val.toFixed(2).replace(/\.00$/, '');
+        zoomOutBtn.disabled = val <= 0.1 + 1e-8;
+        zoomInBtn.disabled = val >= 5 - 1e-8;
+    }
+    function setGraphZoom(val) {
+        val = Number(val);
+        if (isNaN(val)) val = 1;
+        val = Math.max(0.1, Math.min(5, Math.round(val * 100) / 100));
+        if (!activeGraph) return;
+        activeGraph.zoomTo(val, { x: g6Container.scrollWidth / 2, y: g6Container.scrollHeight / 2 });
+        let actual = activeGraph.getZoom();
+        if (actual < 0.1) {
+            activeGraph.zoomTo(0.1, { x: g6Container.scrollWidth / 2, y: g6Container.scrollHeight / 2 });
+            actual = activeGraph.getZoom();
+        }
+        if (actual < 0.1) {
+            activeGraph.zoomTo(0.1, { x: g6Container.scrollWidth / 2, y: g6Container.scrollHeight / 2 });
+            actual = 0.1;
+        }
+        updateZoomInput(actual < 0.1 ? 0.1 : Number(actual.toFixed(2)));
+    }
+    let zoomHoldInterval = null;
+    function startZoomHold(delta) {
+        if (!activeGraph) return;
+        if (zoomHoldInterval) clearInterval(zoomHoldInterval);
+        zoomHoldInterval = setInterval(() => {
+            let z = activeGraph.getZoom();
+            setGraphZoom(z + delta);
+        }, 120);
+    }
+    function stopZoomHold() {
+        if (zoomHoldInterval) clearInterval(zoomHoldInterval);
+        zoomHoldInterval = null;
+    }
+    // + 버튼 hold
+    zoomInBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startZoomHold(0.1); });
+    zoomInBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startZoomHold(0.1); });
+    zoomInBtn.addEventListener('mouseup', stopZoomHold);
+    zoomInBtn.addEventListener('mouseleave', stopZoomHold);
+    zoomInBtn.addEventListener('touchend', stopZoomHold);
+    zoomInBtn.addEventListener('touchcancel', stopZoomHold);
+    // - 버튼 hold
+    zoomOutBtn.addEventListener('mousedown', (e) => { e.preventDefault(); startZoomHold(-0.1); });
+    zoomOutBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startZoomHold(-0.1); });
+    zoomOutBtn.addEventListener('mouseup', stopZoomHold);
+    zoomOutBtn.addEventListener('mouseleave', stopZoomHold);
+    zoomOutBtn.addEventListener('touchend', stopZoomHold);
+    zoomOutBtn.addEventListener('touchcancel', stopZoomHold);
+    zoomInput.addEventListener('input', (e) => {
+        // Allow only numbers
+        let val = e.target.value.replace(/[^\d.]/g, '');
+        e.target.value = val;
+    });
+    zoomInput.addEventListener('change', (e) => {
+        setGraphZoom(e.target.value);
+    });
+    zoomInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') setGraphZoom(e.target.value);
+    });
+    // 1. Add tabindex=0 to the zoom input for focusability
+    zoomInput.setAttribute('tabindex', '0');
+
+    // 2. Attach wheel event to the parent div of the zoom controls
+    const zoomControlsDiv = zoomInput.closest('.flex.items-center');
+    zoomControlsDiv.addEventListener('wheel', (e) => {
+        if (e.target !== zoomInput) return;
+        e.preventDefault();
+        let current = Number(zoomInput.value);
+        if (isNaN(current)) current = 1;
+        let delta = e.deltaY < 0 ? 0.1 : -0.1;
+        let next = current + delta;
+        next = Math.max(0.1, Math.min(5, Math.round(next * 100) / 100));
+        setGraphZoom(next);
+        let actual = activeGraph.getZoom();
+        if (actual < 0.1) {
+            activeGraph.zoomTo(0.1, { x: g6Container.scrollWidth / 2, y: g6Container.scrollHeight / 2 });
+            actual = activeGraph.getZoom();
+        }
+        if (actual < 0.1) {
+            activeGraph.zoomTo(0.1, { x: g6Container.scrollWidth / 2, y: g6Container.scrollHeight / 2 });
+            actual = 0.1;
+        }
+        updateZoomInput(actual < 0.1 ? 0.1 : Number(actual.toFixed(2)));
+    }, { passive: false });
+    // Sync zoom input with graph zoom
+    function syncZoomInputOnGraph() {
+        if (!activeGraph) return;
+        updateZoomInput(activeGraph.getZoom());
+    }
+    // Sync input on every graph render
+    const origInitGraphForModule = initGraphForModule;
+    initGraphForModule = function(...args) {
+        origInitGraphForModule.apply(this, args);
+        syncZoomInputOnGraph();
+    };
+
+    // Helper: flatten tree to array of nodes
+    function flattenTree(node) {
+        let arr = [];
+        function walk(n) {
+            arr.push(n);
+            if (n.children) n.children.forEach(walk);
+        }
+        walk(node);
+        return arr;
+    }
+
+    // --- Observe tab/graph changes and focus node if needed ---
+    const graphArea = document.getElementById('g6-container');
+    const tabContainerEl = document.getElementById('tab-container');
+    const observer = new MutationObserver(() => {
+        console.log('[MutationObserver] fired');
+        if (pendingFocusNodeId && pendingFocusModuleName) {
+            const activeTab = tabContainerEl.querySelector('.tab-link.bg-white');
+            console.log('[MutationObserver] activeTab:', activeTab && activeTab.dataset.moduleName);
+            if (activeTab && activeTab.dataset.moduleName === pendingFocusModuleName) {
+                // Try to focus the node with polling
+                let tries = 0;
+                function tryFocus() {
+                    const nodeItem = activeGraph && activeGraph.findById(pendingFocusNodeId);
+                    console.log('[FocusNode] Polling attempt', tries, 'nodeItem:', !!nodeItem);
+                    if (nodeItem) {
+                        console.log('[FocusNode] Focusing node', pendingFocusNodeId, 'in module', pendingFocusModuleName);
+                        activeGraph.focusItem(nodeItem, true, { easing: 'easeCubic', duration: 500 });
+                        handleNodeClick(nodeItem, pendingFocusNodeId);
+                        pendingFocusNodeId = null;
+                        pendingFocusModuleName = null;
+                    } else if (++tries < 20) {
+                        setTimeout(tryFocus, 50);
+                    }
+                }
+                tryFocus();
+            }
+        }
+    });
+    observer.observe(graphArea, { childList: true, subtree: true });
+    observer.observe(tabContainerEl, { childList: true, subtree: true });
+
+    function observeGraphRenderComplete(callback) {
+        if (!activeGraph) return;
+        const handler = (evt) => {
+            console.log('[G6] Render complete event:', evt.type);
+            activeGraph.off('afterrender', handler);
+            activeGraph.off('afterlayout', handler);
+            callback();
+        };
+        activeGraph.on('afterrender', handler);
+        activeGraph.on('afterlayout', handler);
+    }
+
+    function pollForRootNodeReady(moduleName, callback) {
+        let tries = 0;
+        const maxTries = 40;
+        const poll = () => {
+            const divs = document.getElementById('g6-container');
+            let found = false;
+            console.log('[pollForRootNodeReady] divs:', divs, 'moduleName:', moduleName);
+            return;
+            divs.forEach(div => {
+                if (div.textContent.trim() === moduleName) found = true;
+            });
+            console.log('[pollForRootNodeReady] attempt', tries, 'found:', found);
+            if (found) {
+                console.log('[pollForRootNodeReady] Root node for', moduleName, 'is ready.');
+                callback();
+            } else if (++tries < maxTries) {
+                setTimeout(poll, 50);
+            } else {
+                console.log('[pollForRootNodeReady] Timeout waiting for root node:', moduleName);
+            }
+        };
+        poll();
+    }
+
+    function findNodeByLabel(label) {
+        if (!activeGraph) return null;
+        return activeGraph.getNodes().find(n => {
+            const model = n.getModel();
+            return model && model.label === label;
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            clearHighlight();
+        }
+    });
 });
 </script>
 </body>
